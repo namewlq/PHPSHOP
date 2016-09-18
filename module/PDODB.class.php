@@ -5,6 +5,7 @@
  * Log:  主要为sql语句的过滤,防止SQL注入
  */
 
+require(__DIR__ . "/log.class.php");
 class PDODB
 {
 	private $PDODBName;
@@ -23,7 +24,7 @@ class PDODB
 				'2' => 'connect failed',
 				'3' => 'handle sql failed'
 			);
-	
+	private $logClass;
 	/**
 	 * 构造函数,初始化PDO参数
 	 * @param string $host
@@ -39,6 +40,7 @@ class PDODB
 		$this->PDODBName = $DBName;
 		$this->PDODBPassword = $DBPassword;
 		$this->PDODBUser = $DBUser;
+		$this->logClass = new log();
 		$this->connect();
 	}
 	
@@ -78,7 +80,7 @@ class PDODB
 		catch (PDOException $e)
 		{
 			//此处需要记录日子,暂缓
-			var_dump(array('result'=>2, 'message'=>'connention failed: ' . $e->getMessage()));
+			$this->logClass->addLog('message: ' . $e->getMessage() . "\r\n" . 'code: ' . $e->getCode(), 'PDODB', 'connent_pdo');
 			exit();
 		}
 	}
@@ -150,7 +152,7 @@ class PDODB
 		}
 		catch (PDOException $e)
 		{
-			return array('result'=>3, 'message'=>'sql prepare failed: ' . $e->getMessage() . ' params: ' . serialize($parameters));
+			$this->logClass->addLog('message: ' . $e->getMessage() . "\r\n" . 'code: ' . $e->getCode(), 'PDODB', 'handle_pdo');
 			exit();
 		}
 	}
@@ -176,7 +178,7 @@ class PDODB
 			$whereStr = ' WHERE 1 ';
 			foreach ($where as $k=>$v)
 			{
-				$k = mysql_escape_string($k);
+				//$k = mysql_escape_string($k);
 				$whereStr .= " AND {$k}=:{$k} ";
 			}
 			$sql = "SELECT {$fields} FROM {$this->tableName} {$whereStr} {$sort} LIMIT 1";
@@ -199,7 +201,7 @@ class PDODB
 	{
 		if ( $this->tableName )
 		{
-			$fields = mysql_escape_string($fields);
+			//$fields = mysql_escape_string($fields);
 			$sort = $sort ? ' ORDER BY ' . mysql_escape_string($sort) : '';
 			if ( preg_match('/\d+,\d+/', $limit) )
 			{
@@ -233,11 +235,11 @@ class PDODB
 	{
 		if ( $this->tableName )
 		{
-			$field = mysql_escape_string($field);
+			//$field = mysql_escape_string($field);
 			$whereStr = ' WHERE 1 ';
 			foreach ($where as $k=>$v)
 			{
-				$k = mysql_escape_string($k);
+				//$k = mysql_escape_string($k);
 				$whereStr .= " {$k}=:{$k} ";
 			}
 			$sql = "SELECT COUNT({$field}) as findCount FROM {$this->tableName} {$whereStr}";
